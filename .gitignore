@@ -55,3 +55,5 @@ Thumbs.db
 
 # generated images
 assignment_images/
+
+*.json
