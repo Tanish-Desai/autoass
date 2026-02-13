@@ -44,7 +44,6 @@ Thumbs.db
 
 # PDF files
 *.pdf
-*.md
 
 # Environment variables
 .env
@@ -55,3 +54,8 @@ Thumbs.db
 
 # generated images
 assignment_images/
+
+# test output
+test_output/
+
+
