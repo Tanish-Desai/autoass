@@ -44,7 +44,6 @@ Thumbs.db
 
 # PDF files
 *.pdf
-*.md
 
 # Environment variables
 .env
@@ -57,3 +56,8 @@ Thumbs.db
 assignment_images/
 
 *.json
+
+# test output
+test_output/
+
+
