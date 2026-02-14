@@ -200,6 +200,20 @@ def set_user_config():
     USER_CONFIG["labTitle"] = input("Lab Title : ")
 
 def execute_sql_safely(conn, sql):
+    # --- FIX START: Handle multiple statements separated by semicolons ---
+    # If the SQL contains multiple statements (like the bulk INSERTs), split them.
+    if ";" in sql and "BEGIN" not in sql.upper(): # Ignore PL/SQL blocks which use semicolons correctly
+        statements = [s.strip() for s in sql.split(';') if s.strip()]
+        if len(statements) > 1:
+            full_result = ""
+            for single_stmt in statements:
+                # Recursively call this function for each single statement
+                # This ensures each INSERT gets executed and counted
+                res = execute_sql_safely(conn, single_stmt) 
+                full_result += res + "\n"
+            return full_result.strip()
+    # --- FIX END ---
+
     clean_sql = sql.strip().upper()
     
     # 1. Enable DBMS_OUTPUT (Standard PL/SQL printing)
