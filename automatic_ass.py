@@ -147,9 +147,14 @@ def create_terminal_screenshot(query, result_text, filename):
         font = ImageFont.load_default()
 
     # 3. Construct Text
+    
+    # Wrap long lines (The new logic)
+    wrapped_query = _wrap_text(query, max_chars=95)
+    wrapped_result = _wrap_text(result_text, max_chars=95)
+    
     # We pretend we are in SQL Plus or VS Code
-    header = f"SQL> {query};\n"
-    body = f"\n{result_text}\n"
+    header = f"SQL> {wrapped_query}\n"
+    body = f"\n{wrapped_result}\n"
     footer = "\nSQL> _"
     
     full_text = header + body + footer
@@ -259,7 +264,9 @@ def execute_sql_safely(conn, sql):
         return result_text.strip()
 
     except Exception as e:
-        return f"ERROR at line 1:\n{e}"
+        import traceback
+        traceback.print_exc()  # Print full traceback to console
+        return f"ERROR (Exception details printed to console):\n{e}"
     finally:
         cursor.close()
 
@@ -300,9 +307,26 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
     
     print(f"\nProcessing {len(all_tasks)} queries...")
     
+    # Track created tables
+    created_tables = []
+
     for i, item in enumerate(all_tasks):
         print(f"  > Processing Query {i+1}...")
         
+        # Track table names if it is a CREATE statement
+        sql_upper = item['sql'].strip().upper()
+        if sql_upper.startswith("CREATE TABLE"):
+            try:
+                # Basic parsing: CREATE TABLE xyz ( ... or CREATE TABLE xyz AS ...
+                parts = sql_upper.split()
+                if len(parts) > 2:
+                    # Remove potential open parenthesis if directly attached
+                    table_name = parts[2].split('(')[0]
+                    if table_name not in created_tables:
+                        created_tables.append(table_name)
+            except:
+                pass
+
         # A. Execute SQL
         result_str = execute_sql_safely(conn, item['sql'])
 
@@ -333,10 +357,44 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
     with open(output_filename, "w", encoding="utf-8") as f:
         f.write(md_content)
 
+    # 5. Cleanup created tables
+    if created_tables:
+        print("\n[Cleanup] Dropping temporary tables...")
+        cursor = conn.cursor()
+        for table in reversed(created_tables): # Reverse order to handle foreign keys
+            try:
+                cursor.execute(f"DROP TABLE {table} CASCADE CONSTRAINTS")
+                print(f"  [-] Dropped {table}")
+            except oracledb.Error as e:
+                # ORA-00942: table or view does not exist (already dropped?)
+                if "ORA-00942" not in str(e):
+                    print(f"  [!] Could not drop {table}: {e}")
+        cursor.close()
+
     conn.close()
     print(f"\nSuccess! Generated '{output_filename}'")
     print(f"Images saved in: {os.path.abspath(img_dir)}")
     print("Open the .md file in Obsidian/VS Code and export to PDF.")
+
+    
+# ==========================================
+#        PART 4: HELPER FUNCTIONS
+# ==========================================
+
+def _wrap_text(text, max_chars=100):
+    """Wrap lines longer than max_chars."""
+    lines = text.split('\n')
+    wrapped = []
+    for line in lines:
+        while len(line) > max_chars:
+            # Try to break at a space
+            break_at = line.rfind(' ', 0, max_chars)
+            if break_at == -1:
+                break_at = max_chars
+            wrapped.append(line[:break_at])
+            line = '  ' + line[break_at:].lstrip()
+        wrapped.append(line)
+    return '\n'.join(wrapped)
 
 if __name__ == "__main__":
     # We call the new Markdown function instead of the PDF one
