@@ -44,7 +44,7 @@ Thumbs.db
 
 # PDF files
 *.pdf
-*.md
+
 
 # Environment variables
 .env
@@ -53,7 +53,14 @@ Thumbs.db
 # obsidian
 .obsidian/
 
-# generated images
+# Generated images
 assignment_images/
 
+# Generated output
+DBMS_Assignment.md
+
+# Exercise folder containing PDFs
+/Lab-Exercises
+
+# JSON files having queries
 *.json
