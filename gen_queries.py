@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -7,7 +8,6 @@ load_dotenv() # load vars from .env file
 api_key = os.getenv("GEMINI_API_KEY")
 print(f"GEMINI_API_KEY : {api_key[:5]}...")
 
-
 def generate_queries_json():
     # FILE I/O to store responses
     # response_hub_path = "responses"
@@ -15,13 +15,13 @@ def generate_queries_json():
     os.makedirs(response_hub_path, exist_ok=True)
 
 
-    num = 1
-    fname = f"resp{num}"
-    resp_path = os.path.join(response_hub_path, fname)
-    while os.path.exists(resp_path + ".txt"):
-        num += 1
-        fname = f"resp{num}"
-        resp_path = os.path.join(response_hub_path, fname)
+    # num = 1
+    # fname = f"resp{num}"
+    # resp_path = os.path.join(response_hub_path, fname)
+    # while os.path.exists(resp_path + ".txt"):
+    #     num += 1
+    #     fname = f"resp{num}"
+    #     resp_path = os.path.join(response_hub_path, fname)
         # print(fname)
     f = open("queries.json", "w")
 
@@ -57,8 +57,14 @@ def generate_queries_json():
     4. **Cleanliness:** Do not include SQL comments. Do not use Markdown formatting (i.e., do not start with ```json).
     5. **Completeness:** `setup_queries` must include table creation and data population. `assignments` must answer all questions found in the document. 
     """
+    
+    assn_path = "Lab-Exercises/assn.pdf"
+    if not os.path.exists(assn_path):
+        sys.exit(f"Assignment PDF not found at {assn_path}")
+    
     uploaded_file = client.files.upload(file="Lab-Exercises/assn.pdf")
-
+    
+    print("[Generating queries from gemini...]")
     response = client.models.generate_content(
         model="gemini-3-flash-preview",
         contents=[prompt, uploaded_file],
@@ -71,6 +77,7 @@ def generate_queries_json():
         )
     )
 
+    print("[Queries retrieved]")
     f.write(response.text)
     # print(response.text)
     

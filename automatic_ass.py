@@ -418,6 +418,15 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
         f.write(md_content)
 
     # 5. Cleanup created tables and views
+    print("\n[Cleanup] Removing generated images...")
+    if os.path.exists(img_dir):
+        files = glob.glob(os.path.join(img_dir, "*"))
+        for f in files:
+            try:
+                os.remove(f)
+            except Exception as e:
+                print(f"Error deleting {f}: {e}")
+
     if created_tables or created_views:
         print("\n[Cleanup] Dropping temporary objects...")
         cursor = conn.cursor()
