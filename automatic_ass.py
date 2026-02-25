@@ -7,6 +7,7 @@ import sys
 import platform
 import warnings
 import json
+import datetime
 
 # Suppress pandas UserWarning about raw DB connections
 warnings.filterwarnings('ignore', message='.*pandas only supports SQLAlchemy connectable.*')
@@ -199,7 +200,7 @@ def set_user_config():
     USER_CONFIG["labNo"] = input("Lab No. : ")
     USER_CONFIG["labTitle"] = input("Lab Title : ")
 
-def execute_sql_safely(conn, sql):
+def execute_sql_safely(conn, sql, task_context=None):
     # --- FIX START: Handle multiple statements separated by semicolons ---
     # If the SQL contains multiple statements (like the bulk INSERTs), split them.
     if ";" in sql and "BEGIN" not in sql.upper(): # Ignore PL/SQL blocks which use semicolons correctly
@@ -209,7 +210,7 @@ def execute_sql_safely(conn, sql):
             for single_stmt in statements:
                 # Recursively call this function for each single statement
                 # This ensures each INSERT gets executed and counted
-                res = execute_sql_safely(conn, single_stmt) 
+                res = execute_sql_safely(conn, single_stmt, task_context) 
                 full_result += res + "\n"
             return full_result.strip()
     # --- FIX END ---
@@ -279,8 +280,24 @@ def execute_sql_safely(conn, sql):
 
     except Exception as e:
         import traceback
-        traceback.print_exc()  # Print full traceback to console
-        return f"ERROR (Exception details printed to console):\n{e}"
+        traceback_str = traceback.format_exc()
+        print(traceback_str)  # Print full traceback to console
+        
+        # --- ERROR LOGGING ---
+        if task_context:
+            try:
+                log_filename = "error_log.txt"
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                with open(log_filename, "a", encoding="utf-8") as f:
+                    f.write(f"[{timestamp}] ERROR in Assignment: {task_context.get('assignment_name', 'Unknown')}\n")
+                    f.write(f"Question: {task_context.get('question', 'N/A')}\n")
+                    f.write(f"Query:\n{sql}\n")
+                    f.write(f"Error Details:\n{traceback_str}\n")
+                    f.write("-" * 50 + "\n")
+            except Exception as log_err:
+                print(f"Failed to write to error log: {log_err}")
+                
+        return f"ERROR:\n{e}"
     finally:
         cursor.close()
 
@@ -342,7 +359,11 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
                 pass
 
         # A. Execute SQL
-        result_str = execute_sql_safely(conn, item['sql'])
+        task_ctx = {
+            "assignment_name": f"{USER_CONFIG['labTitle']} (Lab {USER_CONFIG['labNo']})",
+            "question": item.get('q', f'Task {i+1}')
+        }
+        result_str = execute_sql_safely(conn, item['sql'], task_context=task_ctx)
 
         # B. Create Image
         # Save explicitly into the folder

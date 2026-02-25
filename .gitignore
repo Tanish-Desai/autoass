@@ -64,3 +64,6 @@ DBMS_Assignment.md
 
 # JSON files having queries
 *.json
+
+# Error logs
+error_log.txt
