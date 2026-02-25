@@ -231,7 +231,15 @@ def execute_sql_safely(conn, sql, task_context=None):
             if df.empty:
                 result_text = "no rows selected"
             else:
-                result_text = df.to_string(index=False)
+                # Generate string table from dataframe
+                s = df.to_string(index=False)
+                lines = s.split('\n')
+                
+                # The first line is headers.
+                headers = lines[0]
+                
+                separator = "-" * len(headers)
+                result_text = f"{lines[0]}\n{separator}\n" + "\n".join(lines[1:])
         
         # B. DDL / DML -> Execute and Check Row Counts
         else:
