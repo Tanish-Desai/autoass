@@ -9,6 +9,7 @@ import warnings
 import json
 import datetime
 import gen_queries
+import user_input
 
 # Suppress pandas UserWarning about raw DB connections
 warnings.filterwarnings('ignore', message='.*pandas only supports SQLAlchemy connectable.*')
@@ -16,22 +17,9 @@ warnings.filterwarnings('ignore', message='.*pandas only supports SQLAlchemy con
 # ==========================================
 #              CONFIGURATION
 # ==========================================
-DB_CONFIG = {
-    "user": "system",          # Usually 'system' or 'sys'
-    "password": "Metsu#$1234", # <--- CHANGE THIS
-    "service_name": "xe",      # Usually 'xe' for Express Edition or 'orcl'
-    "host": "localhost",
-    "port": 1521
-}
-
-USER_CONFIG = {
-    "regno" : "YYBBBXXXX",
-    "name" : "Superman",
-    "labNo" : "0",
-    "labTitle" : "Practice Exercise",
-    "faculty" : "facc",
-    "slot" : "L00-L00"
-}
+# These will be populated by user input
+DB_CONFIG = {}
+USER_CONFIG = {}
 
 def load_queries_from_json(filename="queries.json"):
     try:
@@ -477,8 +465,28 @@ def _wrap_text(text, max_chars=100):
     return '\n'.join(wrapped)
 
 if __name__ == "__main__":
-    # We call the new Markdown function instead of the PDF one
-    gen_queries.generate_queries_json()
+    # Get configuration from user
+    config = user_input.get_user_configuration()
+    
+    # Populate DB_CONFIG
+    DB_CONFIG.update({
+        "user": config["db_user"],
+        "password": config["db_password"],
+        "service_name": config["db_service"],
+        "host": config["db_host"],
+        "port": config["db_port"]
+    })
+    
+    # Populate USER_CONFIG
+    USER_CONFIG.update({
+        "regno": config["regno"],
+        "name": config["name"],
+        "labNo": config["lab_no"],
+        "labTitle": config["lab_title"],
+        "faculty": config["faculty"],
+        "slot": config["slot"]
+    })
+
+    gen_queries.generate_queries_json(config["gemini_api_key"])
     ASSIGNMENTS, SETUP_QUERIES = load_queries_from_json()
-    set_user_config()
     generate_assignment_markdown()

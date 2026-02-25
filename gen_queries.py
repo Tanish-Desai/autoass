@@ -1,14 +1,14 @@
 import os
 import sys
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-load_dotenv() # load vars from .env file
-api_key = os.getenv("GEMINI_API_KEY")
-print(f"GEMINI_API_KEY : {api_key[:5]}...")
+# load_dotenv() # load vars from .env file
+# api_key = os.getenv("GEMINI_API_KEY")
+# print(f"GEMINI_API_KEY : {api_key[:5]}...")
 
-def generate_queries_json():
+def generate_queries_json(api_key):
     # FILE I/O to store responses
     # response_hub_path = "responses"
     response_hub_path = "/"
