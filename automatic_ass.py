@@ -340,6 +340,7 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
     
     # Track created tables
     created_tables = []
+    created_views = []
 
     for i, item in enumerate(all_tasks):
         print(f"  > Processing Query {i+1}...")
@@ -355,6 +356,22 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
                     table_name = parts[2].split('(')[0]
                     if table_name not in created_tables:
                         created_tables.append(table_name)
+            except:
+                pass
+        
+        # Track view names
+        if "CREATE VIEW" in sql_upper or "CREATE OR REPLACE VIEW" in sql_upper:
+            try:
+                # Handle CREATE OR REPLACE VIEW vs CREATE VIEW
+                start_marker = "VIEW"
+                start_idx = sql_upper.find(start_marker)
+                if start_idx != -1:
+                    # Get the part after "VIEW "
+                    remainder = sql_upper[start_idx + len(start_marker):].strip()
+                    # The next word is the view name
+                    view_name = remainder.split()[0]
+                    if view_name not in created_views:
+                        created_views.append(view_name)
             except:
                 pass
 
@@ -392,18 +409,29 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
     with open(output_filename, "w", encoding="utf-8") as f:
         f.write(md_content)
 
-    # 5. Cleanup created tables
-    if created_tables:
-        print("\n[Cleanup] Dropping temporary tables...")
+    # 5. Cleanup created tables and views
+    if created_tables or created_views:
+        print("\n[Cleanup] Dropping temporary objects...")
         cursor = conn.cursor()
+        
+        # Drop Views first (good practice as they might depend on tables)
+        for view in created_views:
+            try:
+                cursor.execute(f"DROP VIEW {view}")
+                print(f"  [-] Dropped View: {view}")
+            except oracledb.Error as e:
+                if "ORA-00942" not in str(e): # View doesn't exist
+                    print(f"  [!] Could not drop view {view}: {e}")
+
+        # Drop Tables
         for table in reversed(created_tables): # Reverse order to handle foreign keys
             try:
                 cursor.execute(f"DROP TABLE {table} CASCADE CONSTRAINTS")
-                print(f"  [-] Dropped {table}")
+                print(f"  [-] Dropped Table: {table}")
             except oracledb.Error as e:
                 # ORA-00942: table or view does not exist (already dropped?)
                 if "ORA-00942" not in str(e):
-                    print(f"  [!] Could not drop {table}: {e}")
+                    print(f"  [!] Could not drop table {table}: {e}")
         cursor.close()
 
     conn.close()
