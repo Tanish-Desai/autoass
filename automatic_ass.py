@@ -8,6 +8,7 @@ import platform
 import warnings
 import json
 import datetime
+import gen_queries
 
 # Suppress pandas UserWarning about raw DB connections
 warnings.filterwarnings('ignore', message='.*pandas only supports SQLAlchemy connectable.*')
@@ -44,7 +45,6 @@ def load_queries_from_json(filename="queries.json"):
         print(f"Error: Failed to decode JSON from {filename}.")
         return [], []
 
-ASSIGNMENTS, SETUP_QUERIES = load_queries_from_json()
 
 # ==========================================
 #        PART 1: SMART CONNECTION
@@ -469,5 +469,7 @@ def _wrap_text(text, max_chars=100):
 
 if __name__ == "__main__":
     # We call the new Markdown function instead of the PDF one
+    gen_queries.generate_queries_json()
+    ASSIGNMENTS, SETUP_QUERIES = load_queries_from_json()
     set_user_config()
     generate_assignment_markdown()
