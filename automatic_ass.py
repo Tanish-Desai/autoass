@@ -337,6 +337,7 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
     # Track created tables
     created_tables = []
     created_views = []
+    created_sequences = []
 
     for i, item in enumerate(all_tasks):
         print(f"  > Processing Query {i+1}...")
@@ -352,6 +353,17 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
                     table_name = parts[2].split('(')[0]
                     if table_name not in created_tables:
                         created_tables.append(table_name)
+            except:
+                pass
+        
+        # Track sequence names
+        if sql_upper.startswith("CREATE SEQUENCE"):
+            try:
+                parts = sql_upper.split()
+                if len(parts) > 2:
+                    seq_name = parts[2].split(';')[0]
+                    if seq_name not in created_sequences:
+                        created_sequences.append(seq_name)
             except:
                 pass
         
@@ -406,16 +418,16 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
         f.write(md_content)
 
     # 5. Cleanup created tables and views
-    print("\n[Cleanup] Removing generated images...")
-    if os.path.exists(img_dir):
-        files = glob.glob(os.path.join(img_dir, "*"))
-        for f in files:
-            try:
-                os.remove(f)
-            except Exception as e:
-                print(f"Error deleting {f}: {e}")
+    # print("\n[Cleanup] Removing generated images...")
+    # if os.path.exists(img_dir):
+    #     files = glob.glob(os.path.join(img_dir, "*"))
+    #     for f in files:
+    #         try:
+    #             os.remove(f)
+    #         except Exception as e:
+    #             print(f"Error deleting {f}: {e}")
 
-    if created_tables or created_views:
+    if created_tables or created_views or created_sequences:
         print("\n[Cleanup] Dropping temporary objects...")
         cursor = conn.cursor()
         
@@ -427,6 +439,15 @@ def generate_assignment_markdown(output_filename="DBMS_Assignment.md"):
             except oracledb.Error as e:
                 if "ORA-00942" not in str(e): # View doesn't exist
                     print(f"  [!] Could not drop view {view}: {e}")
+
+        # Drop Sequences
+        for seq in created_sequences:
+            try:
+                cursor.execute(f"DROP SEQUENCE {seq}")
+                print(f"  [-] Dropped Sequence: {seq}")
+            except oracledb.Error as e:
+                if "ORA-02289" not in str(e): # Sequence does not exist
+                    print(f"  [!] Could not drop sequence {seq}: {e}")
 
         # Drop Tables
         for table in reversed(created_tables): # Reverse order to handle foreign keys
@@ -484,9 +505,10 @@ if __name__ == "__main__":
         "labNo": config["lab_no"],
         "labTitle": config["lab_title"],
         "faculty": config["faculty"],
-        "slot": config["slot"]
+        "slot": config["slot"],
+        "assn_path": config["assn_path"]
     })
 
-    gen_queries.generate_queries_json(config["gemini_api_key"])
+    gen_queries.generate_queries_json(config["gemini_api_key"], config["assn_path"])
     ASSIGNMENTS, SETUP_QUERIES = load_queries_from_json()
     generate_assignment_markdown()
