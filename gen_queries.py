@@ -8,7 +8,7 @@ from google.genai import types
 # api_key = os.getenv("GEMINI_API_KEY")
 # print(f"GEMINI_API_KEY : {api_key[:5]}...")
 
-def generate_queries_json(api_key):
+def generate_queries_json(api_key, assn_path="Lab-Exercises/assn.pdf"):
     # FILE I/O to store responses
     # response_hub_path = "responses"
     response_hub_path = "/"
@@ -58,11 +58,10 @@ def generate_queries_json(api_key):
     5. **Completeness:** `setup_queries` must include table creation and data population. `assignments` must answer all questions found in the document. 
     """
     
-    assn_path = "Lab-Exercises/assn.pdf"
     if not os.path.exists(assn_path):
         sys.exit(f"Assignment PDF not found at {assn_path}")
     
-    uploaded_file = client.files.upload(file="Lab-Exercises/assn.pdf")
+    uploaded_file = client.files.upload(file=assn_path)
     
     print("[Generating queries from gemini...]")
     response = client.models.generate_content(
