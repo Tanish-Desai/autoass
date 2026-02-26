@@ -1,4 +1,5 @@
 import getpass
+import os
 
 def get_user_configuration():
     print("---------------------------------------------------------")
@@ -29,6 +30,18 @@ def get_user_configuration():
     config["lab_title"] = input("Lab Title [Practice Exercise]: ").strip() or "Practice Exercise"
     config["faculty"] = input("Faculty Name [facc]: ").strip() or "facc"
     config["slot"] = input("Slot [L00-L00]: ").strip() or "L00-L00"
+
+    # Assignment Details
+    print("\n[Assignment Details]")
+    # Ask for absolute path, defaulting to local Lab-Exercises/assn.pdf
+    default_path = os.path.abspath("Lab-Exercises/assn.pdf")
+    user_path = input(f"Absolute Path to Assignment PDF [{default_path}]: ").strip("\"")
+    
+    # Remove quotes if user added them
+    if user_path.startswith('"') and user_path.endswith('"'):
+        user_path = user_path[1:-1]
+        
+    config["assn_path"] = user_path or default_path
 
     print("\n---------------------------------------------------------")
     print("Configuration captured successfully.")
