@@ -56,6 +56,7 @@ def generate_queries_json(api_key, assn_path="Lab-Exercises/assn.pdf"):
     3. **Insert Format:** Group all `INSERT` statements for a single table into one JSON entry. Separate individual `INSERT` commands with a semicolon and a newline character (`\n`).
     4. **Cleanliness:** Do not include SQL comments. Do not use Markdown formatting (i.e., do not start with ```json).
     5. **Completeness:** `setup_queries` must include table creation and data population. `assignments` must answer all questions found in the document. 
+    6. **Input Variables:** Do NOT use SQL*Plus substitution variables (like `&variable_name`). If a query requires user input, use a hardcoded dummy value instead of `&` variables to prevent execution errors. If a string is required, ensure it fits within the column size limits.
     """
     
     if not os.path.exists(assn_path):
